@@ -48,6 +48,9 @@ var (
 	ValidatorQueueKey    = []byte{0x43} // prefix for the timestamps in validator queue
 
 	HistoricalInfoKey = []byte{0x50} // prefix for the historical info
+
+	// terra custom
+	DelegationByValidatorKey                    = []byte{0x99} // key for a delegation, indexed by validator
 )
 
 // gets the key for the validator with address
@@ -137,6 +140,17 @@ func GetDelegationKey(delAddr sdk.AccAddress, valAddr sdk.ValAddress) []byte {
 func GetDelegationsKey(delAddr sdk.AccAddress) []byte {
 	return append(DelegationKey, delAddr.Bytes()...)
 }
+
+// gets the key for delegator bond with validator,
+// however prefixed with valAddr first for faster Iteration
+func GetDelegationKeyByValidator(delAddr sdk.AccAddress, valAddr sdk.ValAddress) []byte {
+	return append(GetDelegationsKeyByValidator(valAddr), delAddr.Bytes()...)
+}
+
+func GetDelegationsKeyByValidator(valAddr sdk.ValAddress) []byte {
+	return append(DelegationByValidatorKey, valAddr.Bytes()...)
+}
+
 
 //______________________________________________________________________________
 

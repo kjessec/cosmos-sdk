@@ -49,10 +49,26 @@ func (k Keeper) GetAllDelegations(ctx sdk.Context) (delegations []types.Delegati
 	return delegations
 }
 
+// // return all delegations to a specific validator. Useful for querier.
+// func (k Keeper) GetValidatorDelegations(ctx sdk.Context, valAddr sdk.ValAddress) (delegations []types.Delegation) { //nolint:interfacer
+// 	store := ctx.KVStore(k.storeKey)
+// 	iterator := sdk.KVStorePrefixIterator(store, types.DelegationKey)
+// 	defer iterator.Close()
+//
+// 	for ; iterator.Valid(); iterator.Next() {
+// 		delegation := types.MustUnmarshalDelegation(k.cdc, iterator.Value())
+// 		if delegation.GetValidatorAddr().Equals(valAddr) {
+// 			delegations = append(delegations, delegation)
+// 		}
+// 	}
+// 	return delegations
+// }
+
 // return all delegations to a specific validator. Useful for querier.
 func (k Keeper) GetValidatorDelegations(ctx sdk.Context, valAddr sdk.ValAddress) (delegations []types.Delegation) { //nolint:interfacer
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.DelegationKey)
+	prefix := append(types.DelegationByValidatorKey, valAddr.Bytes()...)
+	iterator := sdk.KVStorePrefixIterator(store, prefix)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
@@ -89,6 +105,10 @@ func (k Keeper) SetDelegation(ctx sdk.Context, delegation types.Delegation) {
 	store := ctx.KVStore(k.storeKey)
 	b := types.MustMarshalDelegation(k.cdc, delegation)
 	store.Set(types.GetDelegationKey(delegation.DelegatorAddress, delegation.ValidatorAddress), b)
+
+	// index delegations by validator address as prefix as well,
+	// so we can iterate faster when feching all delegations to a validator
+	store.Set(types.GetDelegationKeyByValidator(delegation.DelegatorAddress, delegation.ValidatorAddress), b)
 }
 
 // remove a delegation
